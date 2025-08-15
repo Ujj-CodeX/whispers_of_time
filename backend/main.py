@@ -1,13 +1,11 @@
 from flask import Flask, jsonify, request,g
 from flask_cors import CORS
-from models import db, User, Dish, State
+from models import db, User, Dish, State,Treasure
 import os
-from flask_jwt_extended import JWTManager,create_access_token,jwt_required, get_jwt_identity,decode_token,get_jwt
+from flask_jwt_extended import create_access_token
 import sqlite3
-import datetime
-from datetime import timezone,timedelta
-from flask import jsonify, request , send_file
-from sqlalchemy import func, distinct
+from flask import jsonify, request
+
 
 
 
@@ -30,7 +28,7 @@ def get_db():
     return db
 
 
-# -------------------- STATES / REGIONS --------------------
+# ----------STATES - REGIONS --------------------
 @app.route("/api/states", methods=["GET"])
 def get_states():
     states = State.query.all()
@@ -39,7 +37,7 @@ def get_states():
 
 
 
-# -------------------- DISHES BY REGION --------------------
+# -------- DISHES BY REGION --------------------
 @app.route("/api/dishes", methods=["GET"])
 def get_dishes():
     """Fetch first 10 dishes for a given state/region"""
@@ -61,21 +59,21 @@ def get_dishes():
             "folk_song": d.folk_song,
             "fun_fact": d.fun_fact,
         })
-        print(dish_list)
+        print(d.status)
     return jsonify(dish_list)
 
 
 # -------------------- SINGLE DISH --------------------
 @app.route("/api/dish/<int:dish_id>", methods=["GET"])
 def get_dish(dish_id):
-    """Fetch single dish by id"""
     d = Dish.query.get_or_404(dish_id)
+    print(f" Found dish: {d.name}")
     return jsonify({
         "id": d.id,
         "name": d.name,
         "title": d.title,
         "description": d.description,
-        "image_paths": d.image_paths,
+        "image_path": d.image_path,
         "video_link": d.video_link,
         "folk_song": d.folk_song,
         "fun_fact": d.fun_fact,
@@ -97,6 +95,14 @@ def login():
     access_token = create_access_token(identity=user.id)
     return jsonify({"access_token": access_token})
 
+@app.route("/api/treasure", methods=["GET"])
+def get_treasure_facts():
+    treasures = Treasure.query.order_by(Treasure.id).all()
+    result = [
+        {"id": treasure.id, "treasure": treasure.treasure}
+        for treasure in treasures
+    ]
+    return jsonify(result)
 
 # -------------------- RUN --------------------
 if __name__ == "__main__":

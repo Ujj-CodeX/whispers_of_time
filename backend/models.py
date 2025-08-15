@@ -12,7 +12,7 @@ class User(db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     password = db.Column(db.String(80), nullable=False)
 
-# Table for Indian states (or regions)
+
 class State(db.Model):
     __tablename__ = 'states'
     id = db.Column(db.Integer, primary_key=True)
@@ -43,6 +43,10 @@ class Dish(db.Model):
     def __repr__(self):
         return f"<Dish {self.name} from {self.state.name}>"
     
+class Treasure(db.Model):
+    __tablename__ = 'treasure'
+    id = db.Column(db.Integer, primary_key=True)
+    treasure =  db.Column(db.Text, nullable=True)    
 
 with app.app_context():
     db.create_all()

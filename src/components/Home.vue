@@ -1,8 +1,10 @@
 <template>
+  <h3 style="font-weight: bold; color: green;">Complete the dishes to unlock surprises and cultural heritage facts!</h3>
   <div class="journey-wrapper">
     
     <div v-if="!regionSelected" class="overlay">
       <div class=" inset-card p-4 text-center">
+        <h1 style="font-weight: bold; color: blue;">Welcome to Taste of Heritage</h1>
       <h2 style="font-weight: bold; color: orangered;">Unlock the Secrets of Every Bite!</h2>
       <h4 style="font-weight: bold; color: green;">Choose Region you want to taste</h4>
       <div>
@@ -20,11 +22,11 @@
     </div>
     </div>
 
-    <!-- Journey Map -->
+    
     <div v-else class="map-container">
       <svg class="map-svg" width="100%" height="800">
         <template v-for="(item, index) in dishesWithTreasures" :key="index">
-          <!-- Path lines -->
+          
           <line
             v-if="index < dishesWithTreasures.length - 1"
             :x1="positions[index].x"
@@ -38,22 +40,54 @@
         </template>
       </svg>
 
-      <!-- Points (absolute over SVG) -->
+      
       <div
-        v-for="(item, index) in dishesWithTreasures"
-        :key="'point-' + index"
-        class="point"
-        :class="item.type"
-        :style="{ top: positions[index].y + 'px', left: positions[index].x + 'px' }"
-        @click="item.type === 'dish' ? goToDish(item.id) : openTreasure(index)"
-      >
-        <template v-if="item.type === 'dish'">
-          {{ item.name }}
-        </template>
-        <template v-else>
-          <img src="@/assets/treasure.png" alt="Treasure" style="height: 100px; width: 100px;"/>
-        </template>
-      </div>
+  v-for="(item, index) in dishesWithTreasures"
+  :key="'point-' + index"
+  class="point"
+  :class="item.type"
+  :style="{ top: positions[index].y + 'px', left: positions[index].x + 'px' }"
+  @click="item.type === 'dish' ? goToDish(item.id) : openTreasure(index)"
+>
+  <template v-if="item.type === 'dish'">
+    <div style="text-align: center;">
+    <img
+      :src="getDishImage(item.image_path)"
+      :alt="item.name"
+      style="height: 100px; width: 120px; "
+    />
+    <p style="margin-top: 5px; font-size: 14px; font-weight: bold; color: #333;">
+      {{ item.name }}
+    </p></div>
+  </template>
+  <template v-else>
+    <img
+      src="@/assets/treasure.png"
+      alt="Treasure"
+      style="height: 100px; width: 100px;"
+      @click="openTreasure"
+    />
+    <p style="margin-top: 5px; font-size: 14px; font-weight: bold; color: orangered;">
+      surprise
+    </p>
+  </template>
+</div>
+    <div v-if="showTreasureModal" class="overlay">
+      <div class=" inset-card p-4 text-center">
+        <h1 style="font-weight: bold; color: blue;">Yayy !! Surprise for You</h1>
+      <h2 style="font-weight: bold; color: orangered;">Here is an intersting facts for You! {{ currentIndex + 1 }}</h2>
+      <h4 style="font-weight: bold; color: green;">Do you Know ?</h4>
+      <p v-if="loadingFacts">Loading facts...</p>
+      <p style="white-space: pre-line; color: black; font-size: large; font-weight: bold;">{{ treasures[currentIndex].treasure}}</p>
+      <div>
+        
+      <button class="btn btn-danger" @click="showTreasureModal = false">Close</button>
+      
+    </div>
+    </div>
+    </div>
+
+
     </div>
   </div>
 </template>
@@ -65,6 +99,11 @@ export default {
   name: "JourneyMap",
   data() {
     return {
+      treasures: [],
+      currentIndex: 1,
+      showTreasureModal: false,
+      treasureFacts: [],
+      loadingFacts: false,
       regions: [],
       selectedRegion: "",
       regionSelected: false,
@@ -77,16 +116,16 @@ export default {
   { x: 700,  y: 200 },
   { x: 900,  y: 100 },
 
-  // Move downward to second row
-  { x: 900,  y: 300 },
+  
+  { x: 1200,  y: 300 },
 
-  // Second row (Right → Left)
-  { x: 700,  y: 300 },
-  { x: 500,  y: 300 },
-  { x: 300,  y: 300 },
+  
+  { x: 900,  y: 500 },
+  { x: 600,  y: 400 },
+  { x: 400,  y: 500 },
   { x: 100,  y: 300 },
 
-  // Drop to third row (optional treasure)
+  
   { x: 100,  y: 500 }
       ]
     };
@@ -124,15 +163,43 @@ export default {
         console.error("Failed to fetch dishes:", err);
       }
     },
-    goToDish(id) {
-      alert("Go to dish with ID: " + id);
-      // this.$router.push({ name: "DishDetail", params: { id } });
-    },
-    openTreasure() {
-      alert("Fun fact or surprise!");
+
+    getDishImage(fileName) {
+    
+    try {
+      return require(`@/assets/${fileName}`);
+    } catch (error) {
+      console.error("Image not found:", fileName);
+      return require("@/assets/u.3.png"); 
     }
   },
+    goToDish(id) {
+      alert("Starting your Journey of Taste " + id);
+      this.$router.push({ name: "dash", params: { id } });
+    },
+    
+    openTreasure() {
+      this.showTreasureModal = true;
+      
+    },
+    async fetchAllTreasures() {
+      try {
+        const response = await fetch("http://127.0.0.1:5000/api/treasure");
+        this.treasures = await response.json();
+      } catch (error) {
+        console.error("Error fetching treasures:", error);
+      }
+    },
+    showNextTreasure() {
+      if (this.treasures.length > 0) {
+        this.showTreasureCard = true;
+        this.currentIndex = (this.currentIndex + 1) % this.treasures.length;
+      }
+    },
+  
+  },
   mounted() {
+    this.fetchAllTreasures();
     this.fetchRegions();
   }
 };
@@ -148,7 +215,7 @@ export default {
 
 
 
-/* Normal card on top */
+
 .overlay {
   position: fixed;
   top: 50%;
@@ -183,14 +250,13 @@ export default {
   width: 100px;
   height: 100px;
   border-radius: 50%;
-  text-align: center;
-  line-height: 70px;
+  
+  line-height: 20px;
   font-size: 12px;
   font-weight: bold;
   cursor: pointer;
-  background: #ff7043;
   color: white;
-  border: 3px solid #fff;
+  
   box-shadow: 0 2px 6px rgba(0,0,0,0.2);
   
   
@@ -201,7 +267,7 @@ export default {
   z-index: 5;
 }
 .point.treasure {
-  background: gold;
+  background: orangered;
   font-size: 24px;
 }
 </style>
